@@ -1,4 +1,4 @@
-# Виртуализация и контейнеризация
+# Virtualization and Containerization
 
 ```
 # Enable nested virtualization in Hyper-V
@@ -245,4 +245,80 @@ sudo virsh -c qemu:///system net-list
 
 ```
 sudo virsh -c qemu+ssh://root@IP_ADDRESS_OF_REMOTE_FIRSH/system
+```
+
+---
+
+# Containerization with LXC/D
+
+```
+sudo dnf install epel-release
+sudo dnf install lxc lxc-templates
+sudo systemctl enable --now lxc
+systemctl status lxc
+
+
+sudo lxc-check-config
+```
+
+- There might be an issue with LXC and Cgroup v1.
+
+### Templates directory
+
+
+```
+/usr/share/lxc/templates/
+```
+
+### LXC config location
+
+```
+/etc/lxc/default.conf
+```
+
+### Default LXC config path
+
+```
+/var/lib/lxc/CONTAINER_NAME/
+```
+
+- We can also use chroot on the specific file system, for example to change the root password.
+
+```
+sudo chroot /var/lib/lxc/CONTAINER_NAME/rootfs/ passwd
+```
+
+- It works!
+
+### Install LXD on Centos 8
+
+```
+sudo dnf copr enable ganto/lxc3
+sudo dnf update lxc
+sudo usermod -aG lxd $USER
+sudo "root:1000000:65536" | sudo tee -a /etc/subid
+sudo "root:1000000:65536" | sudo tee -a /etc/subgid
+
+sudo systemctl enable --now lxd
+```
+
+# Application containers with Docker
+
+### Add the docker repo
+
+```
+sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+
+# Check the latest version in the repo
+dnf list docker-ce
+```
+
+- Install containerd.io as well(in case it is not supported for the current Linux Distrubution)
+
+### Add the docker interface to a trusted zone in the firewall
+
+```
+sudo firewall-cmd --add-interface docker0 --zone trusted --permanent
+
+sudo firewall-cmd --reload
 ```
