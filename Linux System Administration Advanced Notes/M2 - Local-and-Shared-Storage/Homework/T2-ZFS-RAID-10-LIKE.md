@@ -4,7 +4,6 @@ Research and implement a RAID10-like configuration with ZFS and mount it on boot
 # Used Sources
 
 - [How to create RAID 10 – Striped Mirror Vdev ZPool On Ubuntu Linux](https://www.cyberciti.biz/faq/how-to-create-raid-10-striped-mirror-vdev-zpool-on-ubuntu-linux/)
-- 
 
 # Video Solution
 
