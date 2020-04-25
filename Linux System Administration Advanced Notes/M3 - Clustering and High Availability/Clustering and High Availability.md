@@ -233,6 +233,15 @@ Given a snapshot of the CIB as input, the scheduler (pacemaker-schedulerd) deter
 
 ## Practice - Failover Clusters
 
+
+
+
+
+
+
+
+
+
 ## TODO: Practice test
 
 # Distributed Storage
@@ -296,3 +305,18 @@ Given a snapshot of the CIB as input, the scheduler (pacemaker-schedulerd) deter
 - Resource modes
     - Single-primary mode allows a single resource to function in the primary role on one member. Used with filesystems like ext3, ext4, etc.
     - In dual-primary mode both resources unction in the primary role on cluster nodes. Typically used with filesystems that implement distributed block manager, like GFS2 and OCFS2
+
+## DRBD Replication Modes
+
+- Protocol A (Asynchronous) – local write operations on the primary node are considered complete once the action finishes and the replication packet is placed on the TCP send buffer. Used with long-distance replication
+- Protocol B (Semi-synchronous) – local write operation on the primary node are considered complete once the action finishes and the replication packet reaches the peer node
+- Protocol C (Synchronous) – local write operations on the primary node are considered complete once the primary and peer node have completed the write operation
+
+## DRDB Tools
+
+- drdbsetup
+    - Command line tool used to configure the DRDB kernel module
+- drdbmeta
+    - Used for managing DRDB meta-data structures
+- drdbadm 
+    - The main administration tool. It allows us to configure and manage DRDB resources. Acts like frontend to the other two tools.
