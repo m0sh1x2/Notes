@@ -320,3 +320,181 @@ Given a snapshot of the CIB as input, the scheduler (pacemaker-schedulerd) deter
     - Used for managing DRDB meta-data structures
 - drdbadm 
     - The main administration tool. It allows us to configure and manage DRDB resources. Acts like frontend to the other two tools.
+
+# iSCSI Practice
+
+Configure m1
+
+```bash
+sudo dnf install targetcli
+sudo mkdir /var/lib/iscsi-images
+sudo targetcli
+cd backstores/fileio
+create D1 /var/lib/iscsi-images/D1.img 10G
+cd /iscsi
+create iqn.2020-04.lab.lsaa:m1.tgt1
+cd iqn.2020-04.lab.lsaa:m1.tgt1/tpg1/luns
+create /backstores/fileio/D1
+cd ../acls
+create iqn.2020-04.lab.lsaa:m2.init1
+create iqn.2020-4.lab.lsaa:m3.init1
+
+# Set auth for m2
+
+cd iqn.2020-04.lab.lsaa:m2.init1/
+set auth userid=demo
+set auth password=demo
+
+# Set auth for m1
+
+cd iqn.2020-04.lab.lsaa:m3.init1/
+set auth userid=demo
+set auth password=demo
+
+# Enable the service over the firewall
+
+sudo firewall-cmd --add-service iscsi-target --permanent
+sudo firewall-cmd --reload
+sudo systemctl enable --now target
+```
+
+Configure m2 and m3
+
+```
+sudo dnf install -y iscsi-initiator-utils
+# Set the initiatorName
+sudo vi /etc/iscsi/initiatorname.iscsi
+# m2 - InitiatorName=iqn.2020-04.lab.lsaa:m2.init1
+# m3 - InitiatorName=iqn.2020-04.lab.lsaa:m3.init1
+
+sudo vi /etc/iscsi/iscsid.conf
+# Uncomment line 58
+# Set up auth on line 62 and 63
+
+# Add the service on m2 and m3
+sudo iscsiadm -m discovery -t sendtargets -p 192.168.1.140
+
+# Check if everything is ok
+sudo iscsiadm -m node -o show
+
+# Login
+sudo iscsiadm -m node login
+sudo iscsiadm -m node --login
+
+# Session check
+sudo iscsiadm -m session show
+
+# Run lsblk to check the new 10G drive/lum
+$ lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda           8:0    0   25G  0 disk
+├─sda1        8:1    0  600M  0 part /boot/efi
+├─sda2        8:2    0    1G  0 part /boot
+└─sda3        8:3    0 23.4G  0 part
+  ├─cl-root 253:0    0 21.4G  0 lvm  /
+  └─cl-swap 253:1    0    2G  0 lvm  [SWAP]
+sdb           8:16   0   10G  0 disk
+sr0          11:0    1    7G  0 rom
+```
+
+Set up HighAvailability
+
+```
+sudo dnf config-manager --set-enabled HighAvailability
+sudo dnf install -y pacemaker pcs
+sudo systemctl enable --now pcsd
+
+# Set hacluster pass
+sudo passwd hacluster
+
+sudo firewall-cmd --add-service high-availability --permanent
+sudo firewall-cmd --reload
+```
+
+
+Install and authorize m2 and m3 for cluster configuration
+
+```
+sudo dnf config-manager --set-enabled HighAvailability
+sudo dnf install -y pacemaker pcs
+sudo systemctl enable --now pcsd
+sudo pcs host auth centos02 centos03
+sudo pcs cluster start --all
+sudo pcs cluster enable --all
+
+
+```
+
+Set up the cluster
+
+```
+sudo pcs cluster setup demo centos02 centos03
+sudo pcs cluster start --all
+
+```
+
+Configure LVM
+
+```bash
+sudo vim /etc/lvm/lvm.conf
+# Set system_id from none to uname
+
+sudo parted -s /dev/sdb -- mklable msdos mkpart primary 16384s -0m set 1 lvm on
+sudo parted -s /dev/sdb -- mklabel msdos mkpart primary 16384s -0m set 1 lvm on
+
+[m0sh1x2@centos02 ~]$ sudo parted -s /dev/sdb -- mklabel msdos mkpart primary 16384s -0m set 1 lvm on
+[m0sh1x2@centos02 ~]$ lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda           8:0    0   25G  0 disk
+├─sda1        8:1    0  600M  0 part /boot/efi
+├─sda2        8:2    0    1G  0 part /boot
+└─sda3        8:3    0 23.4G  0 part
+  ├─cl-root 253:0    0 21.4G  0 lvm  /
+  └─cl-swap 253:1    0    2G  0 lvm  [SWAP]
+sdb           8:16   0   10G  0 disk
+└─sdb1        8:17   0   10G  0 part
+[m0sh1x2@centos02 ~]$ sudo pvc^C
+[m0sh1x2@centos02 ~]$ sudo pvcreate /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created.
+[m0sh1x2@centos02 ~]$ sudo vgcreate vg_ha /dev/sdb1
+  Volume group "vg_ha" successfully created with system ID centos02
+[m0sh1x2@centos02 ~]$ sudo vgs
+  VG    #PV #LV #SN Attr   VSize  VFree
+  cl      1   2   0 wz--n- 23.41g    0
+  vg_ha   1   0   0 wz--n-  9.98g 9.98g
+[m0sh1x2@centos02 ~]$ sudo vgs -o+systemid
+  VG    #PV #LV #SN Attr   VSize  VFree System ID
+  cl      1   2   0 wz--n- 23.41g    0
+  vg_ha   1   0   0 wz--n-  9.98g 9.98g centos02
+[m0sh1x2@centos02 ~]$ sudo lvcreate -l 100%FREE -n lv_ha vg_ha
+  Logical volume "lv_ha" created.
+[m0sh1x2@centos02 ~]$ sudo mkfs.ext4 /dev/vg_ha/lv_ha
+mke2fs 1.44.6 (5-Mar-2019)
+Creating filesystem with 2617344 4k blocks and 655360 inodes
+Filesystem UUID: d6c527ff-b776-4be4-8325-a9c9cfcfe01e
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+```
+
+Additional configs
+
+```
+sudo vgchange vg_ha -an 
+sudo pvscan --cache --activate ay
+sudo pcs resource create lvm_ha ocf:heartbeat:LVM-activate vgname=vg_ha vg_access_mode=system_id --group ha_group
+```
+
+Test the mount:
+
+```
+[m0sh1x2@centos02 ~]$ sudo mount /dev/vg_ha/lv_ha /mnt/
+[m0sh1x2@centos02 ~]$ sudo touch /mnt/readme.txt
+
+# Move the resource to m3
+[m0sh1x2@centos02 ~]$ sudo pcs resource move lvm_ha centos03
+```
