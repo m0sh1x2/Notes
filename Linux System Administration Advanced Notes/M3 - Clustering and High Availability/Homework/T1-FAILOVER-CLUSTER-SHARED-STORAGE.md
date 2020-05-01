@@ -4,6 +4,7 @@ Research and implement two node failover cluster that hosts a web site served by
 # Used Sources
 
 - [GlusterFS Quickstart](https://docs.gluster.org/en/latest/Quick-Start-Guide/Quickstart/)
+- [How to Install and Configure HAProxy on CentOS 8 / RHEL 8](https://www.linuxtechi.com/install-configure-haproxy-centos-8-rhel-8/)
 - [How To Set Up an Apache Active-Passive Cluster Using Pacemaker on CentOS 7](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-apache-active-passive-cluster-using-pacemaker-on-centos-7)
 - [How to install Apache on RHEL 8 / CentOS 8 Linux](https://linuxconfig.org/installing-apache-on-linux-redhat-8)
 - [Configure iSCSI Target & Initiator on CentOS 7 / RHEL7](https://www.itzgeek.com/how-tos/linux/centos-how-tos/configure-iscsi-target-initiator-on-centos-7-rhel7.html)
@@ -29,31 +30,6 @@ Research and implement two node failover cluster that hosts a web site served by
 192.168.1.142 centos02
 192.168.1.143 centos03
 ```
-
-Install Apache on the 2nd and 3rd server:
-
-```
-sudo yum install httpd -y
-```
-
-Configure /service-status for the 2nd and 3rd server:
-
-```bash
-sudo vi /etc/httpd/conf.d/status.conf
-# File Contents:
-<Location /server-status>
-   SetHandler server-status
-</Location>
-```
-
-Enable httpd:
-
-```bash
-sudo systemctl enable httpd --now
-sudo firewall-cmd --add-service http –permanent
-sudo firewall-cmd --reload
-```
-
 
 Server1:
 
@@ -141,3 +117,91 @@ mount -t glusterfs centos02:/gv0 /mnt
 mount -t glusterfs centos03:/gv0 /mnt
 
 ```
+
+
+Mount the Storage for the 3 servers
+
+```
+sudo mkdir /mnt/gluster_storage
+
+mount -t glusterfs centos01:/gv0 /mnt/gluster_storage/
+mount -t glusterfs centos02:/gv0 /mnt/gluster_storage/
+mount -t glusterfs centos03:/gv0 /mnt/gluster_storage/
+
+# Disable selinux in order to gain access to the files
+# Still missing knowledge on how to do this
+
+sudo setenforce 0
+
+```
+
+Install Haproxy on centos01:
+
+```
+dnf install haproxy
+
+# Save the original config file
+cd /etc/haproxy
+mv haproxy.cfg haproxy.cfg.bkp
+```
+
+Set the haproxy load balancing config:
+
+```
+vi /haproxy.cfg
+
+frontend haproxynode
+    bind *:80
+    mode http
+    default_backend backendnodes
+
+backend backendnodes
+    balance roundrobin
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    option httpchk HEAD / HTTP/1.1\r\nHost:localhost
+    server node1 192.168.1.142:80 check
+    server node2 192.168.1.143:80 check
+
+listen stats
+    bind :32700
+    stats enable
+    stats uri /
+    stats hide-version
+    stats auth someuser:password
+```
+
+Nginx config for centos02 and centos03 
+
+```
+# The only change is the glusterfs mount at /etc/nginx.conf
+
+server {
+        listen       80 default_server;
+        listen       [::]:80 default_server;
+        server_name  _;
+        root         /mnt/gluster_storage/html;
+```
+
+Testing the load balancing:
+
+1. Load 192.168.1.141 in the browser.
+2. Monitor the access logs for centos02 and centos03:
+
+centos01:
+
+![centos01](Images/centos01.png)
+
+centos02:
+
+![centos03](Images/centos02.png)
+
+Stop nginx on centos02 and check if balancing works:
+
+![stop_nginx](Images/stop_nginx.png)
+
+It does:
+
+![firefox_test](Images/firefox_test.png)
+
