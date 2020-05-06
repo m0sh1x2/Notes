@@ -111,8 +111,92 @@
 ## Practice Network Services 101
 
 
+## DNS
 
+## Domain Name System (DNS)
 
+- Hierarchical and decentralized naming system for computers, services, or other resources connected to a network
+- DNS name server is a server that stores the DNS records for a domain
+- DNS name server responds with answers to queries against its database
+- DNS database is traditionally stored in a structured text file, the zone file
+- BIND, DNSMasq, Unbound, djbDNS, PowerDNS
+- nslookup, dig, host
+- Four basic types: master, slave, caching-only, and forwarding-only
 
+## DNS Record Types
 
+- SOA - Start of Authority
+- A - Host address IPv4 (host to address)
+- PTR - Pointer (address to host)
+- TXT - Descriptive text
+- NS - Name Server
+- AAAA - Host address IPv6 (Host to address)
+- MX - Mail Exchange
+- CNAME - Canonical name
+
+## Berkley Internet Name Domain (BIND) 
+
+- Ports
+    - 53/tcp
+    - 53/udp
+    - 953/tcp
+
+- Files (CentOS)
+    - Packages: bind, bind-utils
+    - Service: named
+    - Files: 
+        - /etc/named.conf
+        - /etc/rndc.key
+        - /var/named/
+- Files (Ubuntu)
+    - Packages: bind9, bind9utils
+    - Service: bind9
+    - Files: 
+        - /etc/bind/named.conf[.*]
+        - /etc/bind/rndc.key
+        - /etc/bind/zones/
+- Tools
+    - named, rndc
+    - named-checkconf
+    - named-checkzone
+
+# Directory Services
+
+## Lightweight Directory Services
+
+- A directory service is just a database
+- Popular implementations include Microsoft Active Directory, OpenLDAP, 389 Directory Server, ect.
+- Usually acts as a central repository for login names, passwords, and other account attributes
+- Data is organized in entries. Each entry consists of a set of named attributes
+- Common attribute names are organization (o), organizational unit (ou), common name (cn), domain component (dc), etc.
+
+## OpenLDAP
+
+- slapd is the standard LDAP server daemon
+- slurp runs on the master and handles replication to slaves in environments with multiple OpenLDAP servers
+- slappasswd is used to generate passwords
+- /etc/openldap/slapd.conf
+- /etc/openldap/ldap.conf
+
+## 389 Directory Server
+
+- Alternative to OpenLDAP with better documentation, support and active development
+- Multi-master replication
+- Active Directory users and groups synchronization
+- Graphical console for users, groups, and server management
+
+## Kerberos
+
+- Ticket-based authentication system with symmetric key cryptography
+- Used as part of Microsoft Active Directory and Windows authentication
+- krb5.conf, kdc.conf, kadm5.acl
+- klist, kinit, kpasswd
+
+## System Security Services Daemon (sssd)
+
+- Provides authentication, account mapping, credentials caching, etc. 
+- Available for both Linux and FreeBSD
+- Supports authentication both through LDAP and Kerberos
+- Service: sssd
+Config file: sssd.conf
 
