@@ -3,7 +3,7 @@ Research and implement two-node network (one machine with two NICs and the secon
 
 # Sources
 
--
+- [Step-By-Step Configuration of NAT with iptables](https://www.howtoforge.com/nat_iptables)
 -
 
 # Solution
