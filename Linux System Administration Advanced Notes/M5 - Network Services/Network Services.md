@@ -198,5 +198,13 @@
 - Available for both Linux and FreeBSD
 - Supports authentication both through LDAP and Kerberos
 - Service: sssd
-Config file: sssd.conf
+    - Config file: sssd.conf
 
+# FreeIPA
+
+- Identity - (machine, user, groups, …)
+- Policy - (host-based access control)
+- Authentication - (or Audit)*
+- 389 Directory Server, Kerberos, NTP, DNS, and Dogtag + Both Web and CLI tools
+- Best run on Fedora/CentOS/Red Hat. Can be installed on Debian, Ubuntu, openSUSE, etc.
+- Offers server and client installation
