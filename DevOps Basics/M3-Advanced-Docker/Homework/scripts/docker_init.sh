@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Updating and upgrading the system"
 sudo apt update -y
-sudo apt upgrade -y
+# sudo apt upgrade -y
 
 echo "Installing curl"
 sudo apt install curl -y
@@ -15,9 +15,3 @@ sudo usermod -aG docker $USER
 
 echo "Installing Docker Compose"
 sudo apt install docker-compose -y
-
-# Get the IP address of the machine
-
-MACHINE_IP=$(ip -4 addr show eth1 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-docker swarm init --advertise-addr=$MACHINE_IP
-
