@@ -1,0 +1,10 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "generic/ubuntu2004"
+    config.vm.provider "virtualbox" do |v|
+        v.name = "jenkins01"
+        v.memory = 2048
+        v.cpus = 4
+      end
+    config.vm.network "public_network", bridge: "Ethernet", ip: "192.168.1.236"
+    config.vm.provision "shell", path: "initial.sh"
+  end
