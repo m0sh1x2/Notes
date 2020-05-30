@@ -1,0 +1,15 @@
+Vagrant.configure("2") do |config|
+
+    config.vm.define "hw02" do |hw02|
+        hw02.vm.box = "generic/ubuntu2004"
+        hw02.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+        hw02.vm.hostname = "hw02.dob.lab"
+        hw02.vm.provider "virtualbox" do |v|
+            v.name = "hw02"
+            v.memory = 2048
+            v.cpus = 4
+          end
+          hw02.vm.network "public_network", bridge: "Killer E2200 Gigabit Ethernet Controller", ip: "192.168.1.135"
+    end
+
+end
