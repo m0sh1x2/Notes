@@ -1,0 +1,59 @@
+version: "3"
+
+services:
+    swrm-php:
+        image: shekeriev/dob-w3-php
+        deploy:
+          replicas: 1
+        ports:
+            - 8080:80
+        volumes:
+            - "/vagrant/containers/web/php:/var/www/html:ro"
+        networks:
+            - swrm-network
+        depends_on:
+            - swrm-mysql
+
+    swrm-mysql:
+        image: shekeriev/dob-w3-mysql
+        networks:
+            - swrm-network
+        environment:
+            MYSQL_ROOT_PASSWORD: "12345"
+
+networks:
+    swrm-network:
+
+
+# version: "3.7"
+
+# services:
+#   web:
+#     image: nginx:latest
+#     deploy:
+#       replicas: 3
+#     ports:
+#       - 80:80
+#     volumes:
+#       - /vagrant/containers/web/php:/var/www/myapp
+#       - /vagrant/containers/web/docker/site.conf:/etc/nginx/conf.d/site.conf
+#     depends_on:
+#       - php
+#     networks: 
+#       - hw-network
+
+#   php:
+#     image: php:7.4-fpm
+#     volumes:
+#       - /vagrant/containers/nginx-php/php:/var/www/myapp
+#       # - /vagrant/containers/nginx-php/docker/php.ini:/usr/local/etc/php/php.ini\
+  
+#   # db: 
+#   #   image: hw03-db
+#   #   networks:
+#   #     - hw-network
+#   #   environment:
+#   #     MYSQL_ROOT_PASSWORD: "123456"
+
+# networks: 
+#   hw-network:
