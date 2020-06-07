@@ -219,4 +219,21 @@ ansible_ssh_pass=vagrant
 
 # Practice
 
+```
+ansible.cfg
+host_key_checking = false
+private_key_file = /home/vagrant/.ssh/id_rsa
+ansible_user = vagrant
+remote_user = vagrant
+
+# Alternative method
+export ANSIBLE_HOST_KEY_CHECKING=true
+```
+
+# Plays and Playbook
+
+- Plays map hosts to tasks
+- Each play can have multiple tasks
+- Tasks call modules
+- Tasks run sequentially
 
