@@ -94,3 +94,57 @@
 packer build -var 'tag=0.0.1' .\packer.json
 docker run -dt -p 80:3000 --entrypoint "/usr/local/bin/node" la/express:0.0.1 /var/code/bin/www
 ```
+
+# What is Cloud Init?
+
+- Multi-distribution package that handles early initialization  of cloud instances
+- Use Cases:
+    - Setting a default locale
+    - Setting an instance hostname
+    - Generating instance SSH private keys
+    - Adding SSH keys to a users' .ss/authorized_keys
+    - Setting up ephenemural mount point
+    - Configure network devices
+
+# Cloud Init COmmands
+
+- cloud-init init: Initializes cloud-init and performs initial modules
+- cloud-init moduels: Activates moduels using a given configuration key
+- cloud-init single: Runs a single module
+- cloud-init dhclient-hook: Runs the dhclient hook and record network info
+- cloud-init features: Lists defined features
+- cloud-init analyze: Analyzes cloud-init logs and data
+- cloud-init devel: Runs development tools
+- cloud-init collect-logs: Collects and tar all chould-init debug info
+- cloud-init clean: REmoves logs and artifacts so cloud-init can re-run
+- cloud-init status: Reports cloud-init status or wait on completion
+
+# Cloud Init Availability
+
+- Comes installed in the Ubuntu Cloud Images and images available on EC2, Azure, GCE, etc.
+- Other OSs:
+    - Fedora
+    - Debian
+    - RHEL
+    - CentOS
+
+# Formats
+
+- Gzip Compress Content
+- Mime types
+
+# Formats (cont.)
+
+- User-Data Script:
+    - Typically used by those who just want to execute a shell script
+    - Begins with: #!or Content-type text/x-shellscript when using a MIME archive
+- Include File:
+    - This content is an included file
+    - Begins with: #include or Content-Type: text/x-icnlude-url when using MIME archive
+- Cloud Config Data:
+    - Cloud-config is the simplest way to accomplish some things via user-data
+    - Using cloudconfig syntax, the user can specify certain things in a human friendly format
+    - Begins with: #cloud-configorContent-Type: text/cloud-comnfig when using MIME archive
+- Upstart Job
+- Cloud Boothook
+- Part Handler
