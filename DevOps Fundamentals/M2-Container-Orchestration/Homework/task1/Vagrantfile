@@ -3,7 +3,7 @@
 servers = [
     { :hostname => "k8s01", :ip => "192.168.99.101", :box => "generic/ubuntu2004", :port => "10001", :memory => 2048, :cpus => 2},
     { :hostname => "k8s02", :ip => "192.168.99.102", :box => "generic/ubuntu2004", :port => "10002", :memory => 2048, :cpus => 2},
-    { :hostname => "k8s03", :ip => "192.168.99.103", :box => "generic/ubuntu2004", :port => "10003", :memory => 2048, :cpus => 2},
+    # { :hostname => "k8s03", :ip => "192.168.99.103", :box => "generic/ubuntu2004", :port => "10003", :memory => 2048, :cpus => 2},
     # { :hostname => "k8s04", :ip => "192.168.99.104", :box => "generic/ubuntu2004", :port => "10004", :memory => 2048, :cpus => 2}
 ]
 
