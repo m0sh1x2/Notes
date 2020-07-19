@@ -1,67 +1,34 @@
+# Kubernetes and Vagrant automated deployment
+
+servers = [
+    { :hostname => "k8s01", :ip => "192.168.99.101", :box => "generic/ubuntu2004", :port => "10001", :memory => 2048, :cpus => 2},
+    { :hostname => "k8s02", :ip => "192.168.99.102", :box => "generic/ubuntu2004", :port => "10002", :memory => 2048, :cpus => 2},
+    { :hostname => "k8s03", :ip => "192.168.99.103", :box => "generic/ubuntu2004", :port => "10003", :memory => 2048, :cpus => 2},
+    # { :hostname => "k8s04", :ip => "192.168.99.104", :box => "generic/ubuntu2004", :port => "10004", :memory => 2048, :cpus => 2}
+]
+
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
-    (1..3).each do |i|
-        config.vm.define "k8s-#{i}" do |k8s|
-            k8s.vm.box = "generic/ubuntu2004"
-            k8s.vm.synced_folder ".", "/vagrant", type: "virtualbox"
-            k8s.vm.hostname = "k8s-#{i}"
-            k8s.vm.provider "virtualbox" do |v|
-                v.name = "k8s#{i}"
-                v.memory = 2048
-                v.cpus = 2
+    servers.each do |node|
+        config.vm.define node[:hostname] do |nodeconfig|
+            nodeconfig.vm.box = node[:box]
+            nodeconfig.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+            nodeconfig.vm.hostname = node[:hostname]
+            nodeconfig.vm.provider "virtualbox" do |v|
+                v.name = node[:hostname]
+                v.memory = node[:memory]
+                v.cpus = node[:cpus]
             end
-            k8s.vm.network "private_network", ip: "192.168.99.10#{i}"
-            k8s.vm.network "forwarded_port", guest: 22, host: "1000#{i}"
-            k8s.vm.provision "shell", inline: <<EOS
-echo "* Updating mirrors urls"
-sudo sed -i 's/us/bg/g' /etc/apt/sources.list
-echo "* Updating mirrors"
-sudo apt update
+            nodeconfig.vm.network "private_network", ip: node[:ip]
+            nodeconfig.vm.network "forwarded_port", guest: 22, host: node[:port]
 
-#echo "* Upgrading packages"
-#sudo apt upgrade -y
+            # The worker script makes the initial setup
+            nodeconfig.vm.provision "shell", path: "./worker.sh"
 
-echo "* Installing docker"
-sudo apt install docker.io -y
-
-echo "* Start and enable docker"
-sudo systemctl start docker
-sudo systemctl enable docker
-
-echo "* Install apt-transport-https and curl"
-sudo apt install apt-transport-https curl -y
-
-echo "* Add Kubernetes signing key"
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
-
-echo "* Add Kubernetes repo"
-sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-
-echo "* Install Kubernetes"
-sudo apt install kubeadm kubelet kubectl kubernetes-cni -y
-
-echo "* Disable swap"
-sudo swapoff -a
-sudo sed -i '/ swap / s/^/#/' /etc/fstab
-
-#
-# Kubernetes Master Node Setup
-#
-
-echo "* Initialize Kubernetes"
-# We need to specify the cidr network, otherwise coredns will be stuck on ContainerCreating
-sudo kubeadm init --pod-network-cidr=10.244.0.0/16
-
-echo "* Regular user command setup"
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-echo "* Apply pod network"
-kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml
-
-EOS
+            # Initialize the Kubernetes master node
+            if node[:hostname] == "k8s01"
+                nodeconfig.vm.provision "shell", path: "./master.sh"
+            end
         end
     end
 end
