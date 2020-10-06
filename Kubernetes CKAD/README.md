@@ -461,3 +461,120 @@ Kubelet configration is located at:
 ```shell
 /var/lib/kubelet/config.yaml
 ```
+
+# Multiple Schedulers
+
+We can use the default scheduler binary or use a customly built one.
+
+# Quick Notes
+
+The Dockerfile ENTRYPOINT["sleep"] is equal to the command field in the definition files
+CMD["5"] is equal to args; ["5"] in the definition files.
+
+They both override the input.
+
+# Env Value Types
+
+```yaml
+# From the file
+env:
+  - name: APP_COLOR
+    value: red
+# From Config Maps
+env:
+  - name: APP_COLOR
+    valueFrom:
+      configMapKeyRef:
+# From Secrets
+env:
+  - name: APP_COLOR
+    valueFrom:
+      secretKeyRef:
+```
+
+# ConfigMap
+
+Create a configmap
+
+```shell
+kubectl create configmap TheConfigMapName --from-litaral=APP_COLOR=darkblue
+```
+
+Example pod:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    name: webapp-color
+  name: webapp-color
+  selfLink: /api/v1/namespaces/default/pods/webapp-color
+spec:
+  containers:
+  - envFrom:
+    configMapRef:
+      name: webapp-config-map
+    image: kodekloud/webapp-color
+    imagePullPolicy: Always
+    name: webapp-color
+```
+
+Explain the configmap:
+
+```shell
+kubectl explain pods --recursive | grep envFrom -A3
+```
+
+# Multi-container PODs Design Patterns
+
+Therea re 3 common patterns:
+
+- Sidecar
+- Adapter
+- Ambassador
+
+# initContainer
+
+Runs a container with a task before the other containers are executed:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'git clone <some-repository-that-will-be-used-by-application> ; done;']
+```
+
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+  - name: init-mydb
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']  
+```
