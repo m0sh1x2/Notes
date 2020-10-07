@@ -5,7 +5,7 @@
 Creates the filesystem at ```/var/lib/docker```
 Under it are:
 - aufs
-- contaijners
+- containers
 - images
 - volumes
 
@@ -28,7 +28,6 @@ CNI - Container Network Interface
 CSI - Container Storage Interface
 - This is a universtal standard and allows any container orchiestration tool to work with any storage provider.
 
-
 ### Volumes & Mounts
 
 We define the volume and mount it in the container spec.
@@ -49,7 +48,6 @@ spec:
 ```
 
 ### Persistent Volumes
-
 
 ```yaml
 # pv-definition.yaml
