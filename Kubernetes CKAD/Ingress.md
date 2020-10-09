@@ -1,0 +1,50 @@
+# Ingress
+
+- Remember the Difference between services and ingress.
+
+The Ingress Controller needs a:
+
+- Deployment
+- Service
+- ConfigMap
+- Auth(Roles, ClusterRoles, Role Bindings)
+
+
+Ingress with path in a different namespace
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+  namespace: critical-space
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /pay
+        backend:
+          serviceName: pay-service
+          servicePort: 8282
+```
+
+Broken:
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+  namespace: critical-space
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /pay
+        backend:
+          serviceName: pay-service
+          servicePort: 8282
+```
