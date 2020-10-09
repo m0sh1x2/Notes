@@ -253,3 +253,123 @@ ip link set veth-red-br master v-net-0
 ip netns exec blue ip route add 192.168.1.0/24 via 192.168.15.5
 iptables -t nat -A POSTROUTING -s 192.168.15.0/24 -j MASQUARADE
 ```
+
+# Configuring CNI
+
+The CNI plugin is configured in the kubelet service.
+
+The Weave CNI plugin:
+
+- Deployes an agent on every node in the cluster
+- Every sent packet is encapsulated and sent to the other node
+- Then the agent on that node manages the request and forwards the requests to the appropriate container.
+- Each agent/peer stores a copy of the topology and setup
+- Weave is deployed as a deamon set on each node.
+- To debug check the logs of the pods.
+
+
+## Identify the CNI plugin
+
+```
+ls /etc/cni/net.d/
+```
+
+# IPAM - IP Address Managment
+
+```
+# This is the configuration that tells which network plugin to be used.
+cat /et/cni/net.d/net-script.conf
+```
+
+WeaveNet uses 10.32.0.0./24 - around 1,048,574 IP addresses
+- IPs are split across the nodes
+
+Get pod default gateway:
+
+```
+# Run busybox and run
+ip r
+```
+
+
+# Service Networking
+
+In order to make pods communicate with each other we must create a service so that we can expose the network/ports.
+
+When a service is created is accessible across the cluster(it is not bound to a specific node) - ClusterIP
+
+NodePort - Makes the ports accessible on a port for all nodes.
+
+Our focus is more on services and not on ports.
+
+How does this work:
+
+1. Kubelet manages the pods and creates them on every node.
+2. Each Kubelet sericice then invokes(after the kube-apiserver) the CNI plugin to set up an IP Address for every pod.
+3. Each node runs the kube-proxy and every time a new service is created kube-proxy creates the service across the nodes.
+4. Services are a virtual object - they do not exist as a service/process or a pod.
+5. When a service is created they are being assigned an IP address from a specific range. 
+    - by default kube-proxy uses iptables otherwise it can use ipvs and userspace.
+
+```
+kube-api-server --service-cluster-ip=-range ipNet - default ip is 10.0.0.0/24
+ps aux | grep kube-api-server
+```
+
+## Get more info about the service with iptables
+
+```
+iptables -L -t net | grep db-service
+```
+
+Those entries are also logged in to the kube-proxy.log:
+
+```
+cat /var/log/kube-proxy.log
+```
+
+## Get IP defautl IP range of pods:
+
+```
+The network is configured with weave. Check the weave pods logs using command kubectl logs <weave-pod-name> weave -n kube-system and look for ipalloc-range
+```
+
+## Get IP Range of services in the cluster:
+
+```
+# Inspect the setting on kube-api server by running on command cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep cluster-ip-range:
+```
+
+## Get the type of kube-proxy configuration
+
+```
+# By default it is iptables
+# get the logs of the kube-proxy and check what is being used
+```
+
+# Cluster DNS
+
+http://web-service - the main domain when in the same namespace
+http://web-service.apps - apps is the name of the namespace and creates the pod as a subdomain
+http://web-service.apps.svc - you can reach the app with the service "extension"
+http://web-service.apps.svc.cluster.local - this is how services are resolved within the cluster.
+
+```
+KubeDNS -> Hostname(web-service) -> Namespace(apps) -> Type(svc) -> Root(cluster.local) -> IP Address
+```
+
+## Identify the configuration for CoreDNS service
+
+```
+kubectl -n kube-system describe deployments.apps coreds | grep -A2 Args | grep Corefile
+```
+
+# CoreDNS
+
+- Deployed as 2 pods in the cluster as a replica set in a deployemtn.
+- /etc/coredns/Corefile
+- The Coredns config is set up as a ConfigMap object
+    - ```kubectl get configmap -n kube-system```
+
+# Ingress
+
