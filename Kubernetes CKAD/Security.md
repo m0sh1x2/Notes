@@ -114,3 +114,227 @@ spec:
   - server auth
 ```
 
+# API Groups
+
+The Kubernetes API is split into several groups:
+
+- metrics
+- healthz
+- version
+- api
+- apis
+- logs
+
+The API is split into two groups "The core group" and "The named group":
+
+- The core group is where the API functionality exists:
+- The named apis are more organized
+    - /apps
+    - /extensions
+    - /networkinbg.k8s.io
+    - /storage.k8s.io
+    - /authentication.k8s.io
+    - /certificates.k8s.io
+
+Kube proxy is not the same as Kubectl proxy.
+
+## Kube proxy
+- Used to enable connectivity between pods and services in the cluster
+
+## Kubectl proxy
+- HTTP proxy service to access the kube-api server
+
+```
+curl https://kube-master:6443/version
+curl https://kube-master:6443/api/v1/pods
+```
+
+
+# RBAC
+
+1. We crate the role
+2. We link the role with RoleBinding
+
+```
+kubectl get roles
+kubectl get rolebindings
+kubectl describe role developer
+```
+
+How to check if you have access
+
+```
+kubectl auth can-i create deployments
+kubectl auth can-i delete nodes
+kubectl auth can-i create deployments --as dev-user
+kubectl auth can-i create pods --as dev-user
+kubectl aut hcan-i create pods --as dev-user --namespace test
+```
+
+We can also restrict access to resources:
+
+```
+resourceNames: ["blue", "orange"]
+```
+
+## Identify the authorization environment of the cluster:
+
+```
+kubectl describe pod kube-apiserver-master -n kube-system and look for --authorization-mode
+```
+
+## Get role binding info
+
+```
+kubectl describe rolebindings.rbac.authorization.k8s.io -n kube-system kube-proxy
+```
+
+## Check if the user can list pods
+
+```
+kubectl get pods --as dev-user
+```
+
+## Create user with required access
+
+Declarative way:
+
+```shell
+# Create the role verbs and resources
+kubectl create role developer --resource="pods" --verb="list" --verb="create" -o yaml --dry-run=client > dev-role.yaml
+
+# Create the role bind
+kubectl create rolebinding dev-user-binding --role="developer" --user="dev-user" --dry-run=client -o yaml > dev-rolebind.yaml
+```
+
+## Add user access to a different resource
+
+
+```yaml
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: blue
+  name: deploy-role
+rules:
+- apiGroups: ["apps", "extensions"]
+  resources: ["deployments"]
+  verbs: ["create"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dev-user-deploy-binding
+  namespace: blue
+subjects:
+- kind: User
+  name: dev-user
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: deploy-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+# Cluster Roles and Cluster Role binding
+
+Role bindings are set up in the default namespace.
+
+```shell
+kubectl api-resources --namespaced=true # Namespaced resources
+kubectl api-resoruces --namespaced=false # Cluster scoped
+```
+
+Cluster roles are related to cluster roles for example: 
+- Cluster Admin 
+    - Can view Nodes
+    - Can create Nodes
+    - Can delete Nodes
+- Storage Admin
+    - Can view PVs
+    - Can create PVs
+    - Can delete PVCs
+
+Cluster role example:
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kund: ClusterRole
+metadata: 
+  name: cluster-administrator
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["list", "get", "create", "delete"]
+```
+
+And we bind the role to the user with a Cluster Role binding.
+
+We can also createa cluster role for a namespace.
+
+# Image Security
+
+Private Repository
+
+In order to access the private registry images we creat a secret object:
+
+```shell
+kubectl create secret docker-registry regcred \
+    --docker-server= private-registry.io \
+    --docker-username= registry-user \
+    --docker-password= registry-password \
+    --docker-email= registry-user@org.com 
+```
+
+docker-registry is a special type for storing docker-credentials.
+
+We specify the secret with the imagePullSecrets object:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: private-registry.io/apps/internal-app
+  imagePullSecrets:
+  - name: regcred
+```
+
+## Check if user has premission to list nodes
+
+```bash
+kubectl auth can-i list nodes --as michele
+```
+
+# Create a cluster node admin
+
+```yaml
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: node-admin
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: michelle-binding
+subjects:
+- kind: User
+  name: michelle
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: node-admin
+  apiGroup: rbac.authorization.k8s.io
+```
+
