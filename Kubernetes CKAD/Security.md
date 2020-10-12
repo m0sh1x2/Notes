@@ -281,10 +281,10 @@ In order to access the private registry images we creat a secret object:
 
 ```shell
 kubectl create secret docker-registry regcred \
-    --docker-server= private-registry.io \
-    --docker-username= registry-user \
-    --docker-password= registry-password \
-    --docker-email= registry-user@org.com 
+    --docker-server=private-registry.io \
+    --docker-username=registry-user \
+    --docker-password=registry-password \
+    --docker-email=registry-user@org.com 
 ```
 
 docker-registry is a special type for storing docker-credentials.
@@ -338,3 +338,91 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
+# Update ClusterRole binding
+
+```yaml
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: storage-admin
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: michelle-storage-admin
+subjects:
+- kind: User
+  name: michelle
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: storage-admin
+  apiGroup: rbac.authorization.k8s.io
+```
+
+# Security Contexts
+
+Set security context under the pod level:
+
+```yaml
+apiVersion: v1
+...
+spec:
+  securityContext:
+    runAsUser: 1000
+  containers:
+    - name: ubuntu
+    ...
+```
+
+Set security context under the container level:
+
+```yaml
+apiVersion: v1
+...
+spec:
+  containers:
+    - name: ubuntu
+    ...
+    securityContext:
+      runAsUser: 1000
+    capabilities: # Capabilities are only supported at the container level and not at the POD level
+      add: ["MAC_ADMIN"]
+```
+
+# Security Contexts
+
+
+
+Ingress - External traffic going to the pod/service
+Egress - Internal traffic from the pod to the pod
+
+1. Ingress - 80 <--
+2. Egress - 5000 -->
+3. Ingress - 5000 <--
+4. Egress - 3306 -->
+5. Ingress - 3306 <--
+
+Whatever network solution is used all pods must be able to communicate with each other.
+
+We must not configure routes(this is handled by the network plugin).
+
+All pods are in a virtual private network.
+
+By default Kubernetes is configured with an "All Allow" rule that allows traffic from whichever pod is in the cluster.
+
+## Network Policy
+
+Another object in the k8s namespace and is set in one or more pods.
+- Only allow ingress traffic from the API pod on port 3306 and will match only traffic from the pod.
+
+We are using the same way as we link ReplicaSets - labels.
