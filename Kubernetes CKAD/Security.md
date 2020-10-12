@@ -426,3 +426,47 @@ Another object in the k8s namespace and is set in one or more pods.
 - Only allow ingress traffic from the API pod on port 3306 and will match only traffic from the pod.
 
 We are using the same way as we link ReplicaSets - labels.
+
+### Network policy example definition
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      name: internal
+  policyTypes:
+  - Egress
+  - Ingress
+  ingress:
+    - {}
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          name: mysql
+    ports:
+    - protocol: TCP
+      port: 3306
+
+  - to:
+    - podSelector:
+        matchLabels:
+          name: payroll
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+```
+
+Remember to allow port 53 in order to have DNS Resolution.
+Otherwise the pods won't be able to communicate via Domain Names.
