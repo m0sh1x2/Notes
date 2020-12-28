@@ -401,6 +401,29 @@ spec:
 
 # Security Contexts
 
+# Service Accounts
+
+There are two types of service accounts:
+
+- User - for users accessing the clusterN
+- System - for processes and services
+
+```
+kubectl create serviceaccount dashboard-sa
+```
+
+When the service account is create it creates a token.
+The token is stored as a secret.
+The secret object can be used as authentication mechanism.
+
+```
+kubectl describe secret dashboard-sa-token-kbbdm
+```
+
+```
+curl http://cluster:644/api -insecure
+ --header "Authentication bearer: TOKEN_HERE"
+
 
 
 Ingress - External traffic going to the pod/service
