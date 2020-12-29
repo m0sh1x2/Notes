@@ -70,7 +70,7 @@ This is the DNS Hiearchy:
 
 Bind includes the rndc utility which allows remote control of the name server. The rndc utility connects to bind over port 53 sending commands authenticated with digital signatures.
 
-## RNDC Auto Key Generation
+## RNDC Auto Key Generation - Remote Name Daemon Control
 
 ```
 systemctl start named
@@ -93,4 +93,28 @@ enable logging
 ```
 rndc querylog on|off
 # Other info is present in the man pages
+```
+
+# Dig - Domain Information Groper
+
+The dig(Domain Information Groper) utility waas developed by BIND to query name servers. The dig command will enable you to perform any DNS query, more commonly:
+
+- A(Address Record)
+- NS(Name Server)
+- MX(Mail Exchange)
+- CN(Canonical Name or Alias)
+
+# The Name Resolution Process
+
+1. DNS Client queries the resolver for the google.com address.
+2. The resolver queries the root server for google.com.
+3. The root server refers your resolver to the .com TLD.
+4. Your resolver queries the .com TLD authoritive servers for google.com.
+5. The .com TLD authoritive server refers your resolver to the authoritative server for the google.com domain.
+6. Your resolver queries the authoritative servers for google.com and receives the IP address as the answer.
+7. Your resolver caches the answer for the duration of the time-to-live(TTL) specified on the record and the answer is returned to you.
+
+In short:
+```
+Client->Resolver->Root Server->TLD Authoritive Servers->Back to the Resolver->Queries the Authoritive Servers for the domain and gets the IP address->The resolver caches the value.
 ```
