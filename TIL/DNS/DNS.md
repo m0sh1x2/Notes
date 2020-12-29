@@ -68,3 +68,29 @@ This is the DNS Hiearchy:
 
 ## Name Servers and RNDC Keys
 
+Bind includes the rndc utility which allows remote control of the name server. The rndc utility connects to bind over port 53 sending commands authenticated with digital signatures.
+
+## RNDC Auto Key Generation
+
+```
+systemctl start named
+```
+- Start the named service. This wil automatically create the /etc/rndc.key file and attatch it to the configuration.
+
+```
+systemctl enable named
+```
+- Enable the service so it is persistent upon reboot. A symbolic link to the service will be copied to the startup directory.
+
+```
+cat /etc/rndc.key
+```
+- verify that the key was created and there is hashed MD% data in the key file.f
+
+### Some useful commands:
+
+enable logging
+```
+rndc querylog on|off
+# Other info is present in the man pages
+```
