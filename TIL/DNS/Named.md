@@ -2,7 +2,7 @@
 
 ## Enable logging
 
-```lua
+```ruby
 mkdir /var/log/named
 chown -R named:named /var/log/named
 
@@ -111,5 +111,25 @@ logging {
     category dispatch { dispatch_file; };
     category dnssec { dnssec_file; };
     category lame-servers { lame-servers_file; };
+};
+```
+
+# Set up a master zone and reverse DNS Lookup record
+
+The IP is always reversed from the first 3 octets.
+
+```ruby
+zone "mylabserver.com" {
+        type master;
+        file "fwd.mylabserver.com.db";
+};
+
+# 10.0.1.240 -> 1.0.10.in-addr.arpa
+# We reverse the first 3 octets of the IP address
+
+# 192.168.99.230
+zone "230.99.168.in-addr.arpa" {
+        type master;
+        file "230.99.168.db";
 };
 ```
