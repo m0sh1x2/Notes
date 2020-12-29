@@ -65,3 +65,6 @@ This is the DNS Hiearchy:
     - server1.sub.mydomain.com, server1.example.com
 - Zone
     - Sets authoritative boundaries for name server
+
+## Name Servers and RNDC Keys
+
