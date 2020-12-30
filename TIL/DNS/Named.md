@@ -133,3 +133,17 @@ zone "230.99.168.in-addr.arpa" {
         file "230.99.168.db";
 };
 ```
+
+# Start of Authority (SOA) Record
+
+```ruby
+@ttl 86400
+
+@ IN SOA namserv.mydomain.com. user.email.com.(
+    000001    ; serial number
+    1722800   ; refresh
+    900       ; update retry
+    1209600   ; expiry
+    86400     ; min TTL
+)
+```
