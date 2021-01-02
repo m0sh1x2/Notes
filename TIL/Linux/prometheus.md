@@ -54,5 +54,29 @@ rate() - is a particularly useful function for tracking t he average per-second 
 
 For example, this function is useful for alerting when a particular metric "spikes", or increases abnormally quickly.
 
+### Alertmanager Installation
+
+
+
+
+```
+[Unit]
+Description=Alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=alertmanager
+Group=alertmanager
+Type=simple
+ExecStart=/usr/local/bin/alertmanager \
+ --config.file /etc/alertmanager/alertmanager.yml \
+ --storage.path /var/lib/prometheus/
+
+[Install]
+WantedBy=multi-user.target
+```
+
+#### Alertmanager High Availability
 
 
