@@ -1,0 +1,42 @@
+# Kubernetes and Vagrant automated deployment
+
+servers = [
+    { :hostname => "rook01", :ip => "192.168.44.101", :box => "generic/ubuntu2004", :port => "10001", :memory => 2048, :cpus => 4},
+    # { :hostname => "kube02", :ip => "192.168.44.102", :box => "generic/ubuntu2004", :port => "10002", :memory => 2048, :cpus => 2},
+    # { :hostname => "kube03", :ip => "192.168.44.103", :box => "generic/ubuntu2004", :port => "10003", :memory => 2048, :cpus => 2},
+    # { :hostname => "kube04", :ip => "192.168.44.104", :box => "generic/ubuntu2004", :port => "10004", :memory => 2048, :cpus => 2}
+]
+
+Vagrant.configure("2") do |config|
+    config.ssh.insert_key = false
+    servers.each do |node|
+        config.vm.define node[:hostname] do |nodeconfig|
+            
+            nodeconfig.vm.box = node[:box]
+            nodeconfig.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+            nodeconfig.vm.hostname = node[:hostname]
+            nodeconfig.vm.provider "virtualbox" do |v|
+                v.name = node[:hostname]
+                v.memory = node[:memory]
+                v.cpus = node[:cpus]
+            end
+
+            nodeconfig.vm.network "private_network", ip: node[:ip]
+            nodeconfig.vm.network "forwarded_port", guest: 22, host: node[:port]
+
+            # Add Rook Storage Disk
+            nodeconfig.vm.disk :disk, size: "50GB", name: "disk01"
+            
+            # The worker script makes the initial setup
+            nodeconfig.vm.provision "shell", path: "./src/scripts/init.sh"
+
+            # # Initialize the Kubernetes control node
+            # if node[:hostname] == "k8s01"
+            #     nodeconfig.vm.provision "shell", path: "./scripts/control.sh"
+            # else
+            #     # All other nodes will join the master nodes
+            #     nodeconfig.vm.provision "shell", path: "./scripts/join.sh"
+            # end
+        end
+    end
+end
