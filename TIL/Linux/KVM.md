@@ -72,3 +72,11 @@ QEMU/KVM - Provide Paravirtualization Support
 - Raw images (.img)
     - These contain sector-by-sector disk contents
 - Bootable CD/DVD Images (.iso)
+
+### Read-Only Formats
+
+- macOS - Universal Disk Image Format (.dmg)
+- Bochs
+- Linux cloop
+    - Compressed image format
+- Parallels disk image (.hdd, hds)
